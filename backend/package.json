@@ -1,0 +1,31 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "dist/server.js",
+  "author": "David Savage",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "build": "rimraf ./dist && tsc",
+    "start-dev": "cross-env NODE_ENV=development ts-node src/server.ts",
+    "start": "cross-env NODE_ENV=production node dist/server.js"
+  },
+  "dependencies": {
+    "cross-env": "^10.0.0",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "stream-json": "^1.9.1",
+    "typeorm": "^0.3.25"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.1.0",
+    "@types/stream-chain": "^2.1.0",
+    "@types/stream-json": "^1.7.8",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.2"
+  }
+}
