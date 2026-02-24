@@ -7,14 +7,21 @@
   "private": true,
   "scripts": {
     "build": "rimraf ./dist && tsc",
-    "start-dev": "cross-env NODE_ENV=development ts-node src/server.ts",
-    "start": "cross-env NODE_ENV=production node dist/server.js"
+    "start": "node dist/server.js",
+    "start-dev": "cross-env NODE_ENV=development DOTENV_CONFIG_PATH=.env ts-node -r dotenv/config src/server.ts",
+    "start-prod-local": "cross-env NODE_ENV=production DOTENV_CONFIG_PATH=.env.production node -r dotenv/config dist/server.js",
+    "start-worker": "node dist/worker.js",
+    "start-dev-worker": "cross-env NODE_ENV=development ts-node -r dotenv/config src/worker.ts",
+    "start-prod-local-worker": "cross-env NODE_ENV=production DOTENV_CONFIG_PATH=.env.production node -r dotenv/config dist/worker.js"
   },
   "dependencies": {
+    "bullmq": "^5.70.1",
     "cross-env": "^10.0.0",
     "csv-parser": "^3.2.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "ioredis": "^5.9.3",
+    "multer": "^2.0.2",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "stream-json": "^1.9.1",
@@ -22,6 +29,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
+    "@types/multer": "^2.0.0",
     "@types/node": "^24.1.0",
     "@types/stream-chain": "^2.1.0",
     "@types/stream-json": "^1.7.8",
