@@ -8,6 +8,7 @@ export type UploadRecord = {
   filePath: string;
   originalName: string;
   createdAt: number;
+  progress: string;
   progressPercent: number;
   processedRecords: number;
   failedRecords: number;
@@ -76,6 +77,7 @@ export async function getUpload(uploadId: string): Promise<UploadRecord | null> 
     filePath: raw.filePath,
     originalName: raw.originalName,
     createdAt: Number(raw.createdAt ?? 0),
+    progress: `${Number(raw.progressPercent ?? 0)}%`,
     progressPercent: Number(raw.progressPercent ?? 0),
     processedRecords: Number(raw.processedRecords ?? 0),
     failedRecords: Number(raw.failedRecords ?? 0),

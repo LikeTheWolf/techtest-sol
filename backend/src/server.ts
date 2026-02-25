@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import http from 'http';
 import multer from 'multer';
 import fs from "node:fs";
@@ -53,7 +53,8 @@ server.listen(Number(SERVER_PORT), '0.0.0.0', async () => {  // Listen on all ne
 });
 
 //upload file
-app.post("/api/upload", uploadRateLimiter, upload.single("file"), async (req, res) => {
+const uploadHandler = async (req: Request, res: Response, next: NextFunction) => {
+  try {
   const file = req.file; 
   if (!file) {
     return res.status(400).json({ error: "No file uploaded (form-data key must be 'file')" });
@@ -81,13 +82,34 @@ app.post("/api/upload", uploadRateLimiter, upload.single("file"), async (req, re
     uploadId, 
     message: "File uploaded successfully. Processing started.",
   });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+app.post("/api/upload", uploadRateLimiter, upload.single("file"), uploadHandler);
+app.post("/upload", uploadRateLimiter, upload.single("file"), uploadHandler);
+
+const statusHandler = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const record = await getUpload(req.params.uploadId); 
+
+    if (!record) { 
+      return res.status(404).json({ error: "Upload not found." }); 
+    } 
+    return res.json(record); 
+  } catch (err) {
+    return next(err);
+  }
+};
+
+app.get("/api/status/:uploadId", statusHandler);
+app.get("/status/:uploadId", statusHandler);
+
+app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+  const message = err instanceof Error ? err.message : "Unexpected server error";
+  return res.status(500).json({ error: message });
 });
-
-app.get("/api/status/:uploadId", async (req, res) => { 
-  const record = await getUpload(req.params.uploadId); 
-
-  if (!record) { 
-    return res.status(404).json({ error: "Upload not found." }); 
-  } 
-  return res.json(record); 
-}); 

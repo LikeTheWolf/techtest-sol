@@ -21,7 +21,6 @@ function buildConsoleLogger(): LoggerLike {
 
 function buildWinstonLogger(): LoggerLike | null {
   try {
-    // Optional runtime dependency: if winston is installed, use structured logging.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const winston = require("winston");
     const logLevel = process.env.LOG_LEVEL ?? "info";
