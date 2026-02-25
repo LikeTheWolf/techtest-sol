@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Upload Validator">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f5fbf" />
+      <stop offset="100%" stop-color="#0a2f5f" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#bg)" />
+  <path d="M20 16h16l8 8v24a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4V20a4 4 0 0 1 4-4z" fill="#ffffff" />
+  <path d="M36 16v8h8" fill="#dce8ff" />
+  <path d="M30 44V32" stroke="#0f5fbf" stroke-width="3" stroke-linecap="round" />
+  <path d="M26 36l4-4 4 4" fill="none" stroke="#0f5fbf" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="46" cy="46" r="10" fill="#16a34a" />
+  <path d="M41 46l3 3 6-7" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
