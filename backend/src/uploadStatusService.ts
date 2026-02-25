@@ -8,9 +8,11 @@ export type UploadRecord = {
   filePath: string;
   originalName: string;
   createdAt: number;
+  progressPercent: number;
   processedRecords: number;
   failedRecords: number;
   totalRecords: number;
+  details: FailureDetail[];
   errorMessage?: string;
 };
 
@@ -38,6 +40,7 @@ export async function createUpload(params: {
     filePath: params.filePath,
     originalName: params.originalName,
     createdAt: String(Date.now()),
+    progressPercent: "0",
     processedRecords: "0",
     failedRecords: "0",
     totalRecords: "0",
@@ -48,10 +51,24 @@ export async function createUpload(params: {
 
 export async function getUpload(uploadId: string): Promise<UploadRecord | null> {
   const key = keyFor(uploadId);
+  const listKey = failuresKeyFor(uploadId);
 
-  const raw = await redis.hgetall(key);
+  const [raw, failureEntries] = await Promise.all([
+    redis.hgetall(key),
+    redis.lrange(listKey, 0, 999),
+  ]);
 
   if (!raw || Object.keys(raw).length === 0) return null;
+
+  const details = failureEntries
+    .map((entry) => {
+      try {
+        return JSON.parse(entry) as FailureDetail;
+      } catch {
+        return null;
+      }
+    })
+    .filter((entry): entry is FailureDetail => entry !== null);
 
   return {
     uploadId: raw.uploadId,
@@ -59,9 +76,11 @@ export async function getUpload(uploadId: string): Promise<UploadRecord | null> 
     filePath: raw.filePath,
     originalName: raw.originalName,
     createdAt: Number(raw.createdAt ?? 0),
+    progressPercent: Number(raw.progressPercent ?? 0),
     processedRecords: Number(raw.processedRecords ?? 0),
     failedRecords: Number(raw.failedRecords ?? 0),
     totalRecords: Number(raw.totalRecords ?? 0),
+    details,
     errorMessage: raw.errorMessage || undefined,
   };
 }
@@ -118,5 +137,6 @@ export async function pushFailureDetail(
   await redis.multi() 
     .lpush(listKey, json) 
     .ltrim(listKey, 0, 999) 
+    .expire(listKey, ttlSeconds)
     .exec(); 
 }

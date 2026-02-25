@@ -28,6 +28,20 @@ services:
       - uploads-data:/app/runtime/uploads
     restart: unless-stopped
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env.production
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: ["npm", "run", "start-worker"]
+    volumes:
+      - uploads-data:/app/runtime/uploads
+    restart: unless-stopped
+
 volumes:
   redis-data:
   uploads-data:

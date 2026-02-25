@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import express from 'express';
 import http from 'http';
 import multer from 'multer';
+import fs from "node:fs";
 import { uploadRateLimiter } from "./middleware/uploadRateLimit";
 import { uploadQueue } from "./queues/uploadQueue";
 import { createUpload, getUpload } from './uploadStatusService';
@@ -14,6 +15,19 @@ const upload = multer({
   dest: process.env.RUNTIME_UPLOAD_DIR ?? "runtime/uploads",
 });
 
+const acceptedCsvMimeTypes = new Set([
+  "text/csv",
+  "application/csv",
+  "application/vnd.ms-excel",
+  "text/plain",
+]);
+
+function isCsvFile(file: Express.Multer.File): boolean {
+  return (
+    file.originalname.toLowerCase().endsWith(".csv") ||
+    acceptedCsvMimeTypes.has((file.mimetype || "").toLowerCase())
+  );
+}
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*'); // Or restrict in production
@@ -43,6 +57,10 @@ app.post("/api/upload", uploadRateLimiter, upload.single("file"), async (req, re
   const file = req.file; 
   if (!file) {
     return res.status(400).json({ error: "No file uploaded (form-data key must be 'file')" });
+  }
+  if (!isCsvFile(file)) {
+    await fs.promises.unlink(file.path).catch(() => {});
+    return res.status(400).json({ error: "Invalid file type. Please upload a .csv file." });
   }
 
   const uploadId = randomUUID();

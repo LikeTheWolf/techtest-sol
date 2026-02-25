@@ -1,5 +1,4 @@
 import { Worker } from "bullmq";
-import "dotenv/config";
 import { redisConnectionOpts } from "./connections/redis";
 import { processUploadJob } from "./jobs/processUploadJob";
 import { UPLOAD_QUEUE_NAME } from "./queues/uploadQueue";

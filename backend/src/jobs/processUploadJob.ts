@@ -2,26 +2,22 @@ import { parse } from "fast-csv";
 import fs from "node:fs";
 import pLimit from "p-limit";
 import { incrCounts, pushFailureDetail, setProgressPercent } from "../uploadStatusService";
+import { logger } from "../logging/logger";
+import { parseCsvRow } from "./csvRow";
+import {
+  createValidationConfigFromEnv,
+  mockValidateEmail,
+  withTimeout,
+} from "./validation";
 
 type UploadJobData = { uploadId: string; filePath: string };
-type ValidationResult = { valid: boolean };
 
 const VALIDATION_CONCURRENCY = 5;
 
-const VALIDATION_TIMEOUT_MS = Number(process.env.VALIDATION_TIMEOUT_MS ?? "1000");
-if (!Number.isInteger(VALIDATION_TIMEOUT_MS) || VALIDATION_TIMEOUT_MS <= 0) {
-  throw new Error(`VALIDATION_TIMEOUT_MS must be a positive integer. Got: ${process.env.VALIDATION_TIMEOUT_MS}`);
-}
-
-const VALIDATION_HANG_PCT = Number(process.env.VALIDATION_HANG_PCT ?? "0"); // 0..100
-if (!Number.isFinite(VALIDATION_HANG_PCT) || VALIDATION_HANG_PCT < 0 || VALIDATION_HANG_PCT > 100) {
-  throw new Error(`VALIDATION_HANG_PCT must be 0..100. Got: ${process.env.VALIDATION_HANG_PCT}`);
-}
-
-const STATUS_FLUSH_EVERY_N = Number(process.env.STATUS_FLUSH_EVERY_N ?? "1000");
-if (!Number.isInteger(STATUS_FLUSH_EVERY_N) || STATUS_FLUSH_EVERY_N <= 0) {
-  throw new Error(`STATUS_FLUSH_EVERY_N must be a positive integer. Got: ${process.env.STATUS_FLUSH_EVERY_N}`);
-}
+const validationConfig = createValidationConfigFromEnv(process.env);
+const VALIDATION_TIMEOUT_MS = validationConfig.timeoutMs;
+const VALIDATION_HANG_PCT = validationConfig.hangPct;
+const STATUS_FLUSH_EVERY_N = validationConfig.flushEveryN;
 
 // returns [promiseToAwait, resolveFunction]
 function deferred<T = void>(): [Promise<T>, (value: T) => void] {
@@ -32,35 +28,6 @@ function deferred<T = void>(): [Promise<T>, (value: T) => void] {
     resolveFn = resolve;
   });
   return [promise, resolveFn];
-}
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("Validation timed out")), ms);
-    promise.then(
-      (v) => {
-        clearTimeout(timer);
-        resolve(v);
-      },
-      (e) => {
-        clearTimeout(timer);
-        reject(e);
-      }
-    );
-  });
-}
-
-async function mockValidateEmail(email: string): Promise<ValidationResult> {
-  if (Math.random() * 100 < VALIDATION_HANG_PCT) {
-    return new Promise<ValidationResult>(() => {
-      // intentional hang
-    });
-  }
-
-  // normally resolve after delay
-  return new Promise<ValidationResult>((resolve) => {
-    setTimeout(() => resolve({ valid: email.includes("@") }), 100);
-  });
 }
 
 export async function processUploadJob(data: UploadJobData): Promise<void> {
@@ -129,8 +96,7 @@ export async function processUploadJob(data: UploadJobData): Promise<void> {
   });
 
   parser.on("data", (row: any) => {
-    const name = String(row?.name ?? "").trim();
-    const email = String(row?.email ?? "").trim();
+    const { name, email } = parseCsvRow(row);
 
     deltaTotal += 1;
     void flushDeltas(false); 
@@ -138,24 +104,49 @@ export async function processUploadJob(data: UploadJobData): Promise<void> {
     scheduled += 1;
 
     void limit(async () => {
+      logger.info("Validation attempt", { uploadId, name, email });
+
       if (!email) {
         deltaFailed += 1;
         await pushFailureDetail(uploadId, { name, email, error: "Missing email" });
+        logger.warn("Validation failed", {
+          uploadId,
+          name,
+          email,
+          error: "Missing email",
+        });
         return;
       }
 
       try {
-        const result = await withTimeout(mockValidateEmail(email), VALIDATION_TIMEOUT_MS);
+        const result = await withTimeout(
+          mockValidateEmail(email, { hangPct: VALIDATION_HANG_PCT }),
+          VALIDATION_TIMEOUT_MS
+        );
 
         if (result.valid) {
           deltaProcessed += 1;
+          logger.info("Validation succeeded", { uploadId, name, email });
         } else {
           deltaFailed += 1;
           await pushFailureDetail(uploadId, { name, email, error: "Invalid email format" });
+          logger.warn("Validation failed", {
+            uploadId,
+            name,
+            email,
+            error: "Invalid email format",
+          });
         }
       } catch (e: any) {
         deltaFailed += 1;
-        await pushFailureDetail(uploadId, { name, email, error: e?.message ?? "Validation service error" });
+        const message = e?.message ?? "Validation service error";
+        await pushFailureDetail(uploadId, { name, email, error: message });
+        logger.error("Validation error", {
+          uploadId,
+          name,
+          email,
+          error: message,
+        });
       }
     }).finally(() => {
       finished += 1;
