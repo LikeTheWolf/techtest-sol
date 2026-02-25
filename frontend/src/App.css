@@ -133,6 +133,44 @@
   width: 100%;
 }
 
+.about-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.about-card {
+  width: 100%;
+  max-width: 640px;
+  border-radius: 14px;
+  border: 1px solid rgba(13, 55, 94, 0.12);
+  box-shadow: 0 12px 26px rgba(10, 60, 100, 0.08);
+  text-align: center;
+}
+
+.about-card h1 {
+  margin: 0 0 12px;
+  font-size: clamp(1.5rem, 2.3vw, 2rem);
+}
+
+.about-image {
+  display: block;
+  width: min(280px, 100%);
+  border-radius: 12px;
+  margin: 14px auto;
+  border: 1px solid rgba(13, 55, 94, 0.16);
+}
+
+.about-link {
+  color: #0c6ea8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.about-link:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 640px) {
   .app-content {
     padding: 16px 12px 24px;
@@ -140,5 +178,9 @@
 
   .upload-lab-upload-row {
     grid-template-columns: 1fr;
+  }
+
+  .about-card {
+    max-width: 100%;
   }
 }
