@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import express from 'express';
 import http from 'http';
 import multer from 'multer';
+import { uploadRateLimiter } from "./middleware/uploadRateLimit";
 import { uploadQueue } from "./queues/uploadQueue";
 import { createUpload, getUpload } from './uploadStatusService';
 
@@ -38,7 +39,7 @@ server.listen(Number(SERVER_PORT), '0.0.0.0', async () => {  // Listen on all ne
 });
 
 //upload file
-app.post("/api/upload", upload.single("file"), async (req, res) => {
+app.post("/api/upload", uploadRateLimiter, upload.single("file"), async (req, res) => {
   const file = req.file; 
   if (!file) {
     return res.status(400).json({ error: "No file uploaded (form-data key must be 'file')" });

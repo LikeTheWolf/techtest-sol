@@ -17,6 +17,13 @@ export type UploadRecord = {
 const ttlSeconds = 24 * 60 * 60;
 
 const keyFor = (uploadId: string) => `upload:${uploadId}`;
+const failuresKeyFor = (uploadId: string) => `upload:${uploadId}:failures`;
+
+export type FailureDetail = {
+  name: string; 
+  email: string; 
+  error: string; 
+};
 
 export async function createUpload(params: {
   uploadId: string;
@@ -67,23 +74,49 @@ export async function setError(uploadId: string, errorMessage: string) {
   await redis.hset(keyFor(uploadId), { status: "error", errorMessage });
 }
 
-export async function incrTotalRecords(uploadId: string, delta = 1): Promise<number> {
-  if (!Number.isInteger(delta) || delta <= 0) {
-    throw new Error(`incrTotalRecords delta must be a positive integer. Got: ${delta}`);
-  }
-  return redis.hincrby(keyFor(uploadId), "totalRecords", delta);
+function assertPositiveInt(name: string, n: number) {
+  if (!Number.isInteger(n) || n < 0) throw new Error(`${name} must be an integer >= 0. Got: ${n}`);
 }
 
-export async function incrProcessedRecords(uploadId: string, delta: number = 1): Promise<number> { // Atomically increment processedRecords.
-  if (!Number.isInteger(delta) || delta <= 0) {
-    throw new Error(`incrTotalRecords delta must be a positive integer. Got: ${delta}`);
-  }
-  return redis.hincrby(keyFor(uploadId), "processedRecords", delta);
-} 
+export async function incrCounts(
+  uploadId: string,
+  deltas: { total?: number; processed?: number; failed?: number }
+): Promise<void> {
+  const total = deltas.total ?? 0;
+  const processed = deltas.processed ?? 0;
+  const failed = deltas.failed ?? 0;
 
-export async function incrFailedRecords(uploadId: string, delta: number = 1): Promise<number> { // Atomically increment failedRecords.
-  if (!Number.isInteger(delta) || delta <= 0) {
-    throw new Error(`incrTotalRecords delta must be a positive integer. Got: ${delta}`);
+  assertPositiveInt("total delta", total);
+  assertPositiveInt("processed delta", processed);
+  assertPositiveInt("failed delta", failed);
+
+  const key = keyFor(uploadId);
+
+  const tx = redis.multi();
+  if (total) tx.hincrby(key, "totalRecords", total);
+  if (processed) tx.hincrby(key, "processedRecords", processed);
+  if (failed) tx.hincrby(key, "failedRecords", failed);
+  await tx.exec();
+}
+
+export async function setProgressPercent( 
+  uploadId: string,
+  progressPercent: number 
+): Promise<void> {
+  if (!Number.isInteger(progressPercent) || progressPercent < 0 || progressPercent > 100) { 
+    throw new Error(`progressPct must be integer 0..100, got ${progressPercent}`); 
   }
-  return redis.hincrby(keyFor(uploadId), "failedRecords", delta);
-} 
+  await redis.hset(keyFor(uploadId), { progressPercent: String(progressPercent) });
+}
+
+export async function pushFailureDetail( 
+  uploadId: string,
+  detail: FailureDetail 
+): Promise<void> {
+  const listKey = failuresKeyFor(uploadId); 
+  const json = JSON.stringify(detail); 
+  await redis.multi() 
+    .lpush(listKey, json) 
+    .ltrim(listKey, 0, 999) 
+    .exec(); 
+}
