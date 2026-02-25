@@ -26,6 +26,7 @@ services:
       - "446:446"
     volumes:
       - uploads-data:/app/runtime/uploads
+      - /home/sav2748/ssl:/app/ssl:ro
     restart: unless-stopped
 
   worker:

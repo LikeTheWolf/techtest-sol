@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import express, { NextFunction, Request, Response } from 'express';
 import http from 'http';
+import https from 'https';
 import multer from 'multer';
 import fs from "node:fs";
 import { uploadRateLimiter } from "./middleware/uploadRateLimit";
@@ -8,7 +9,17 @@ import { uploadQueue } from "./queues/uploadQueue";
 import { createUpload, getUpload } from './uploadStatusService';
 
 const app = express();
-let server = http.createServer(app);
+let server: http.Server | https.Server;
+
+if (process.env.NODE_ENV === "production") {
+  const sslOptions = {
+    key: fs.readFileSync("/app/ssl/cloudflare-origin.key"),
+    cert: fs.readFileSync("/app/ssl/cloudflare-origin.pem"),
+  };
+  server = https.createServer(sslOptions, app);
+} else {
+  server = http.createServer(app);
+}
 
 const SERVER_PORT = process.env.PORT;
 const upload = multer({
@@ -40,7 +51,8 @@ app.get('/heartbeat', (req, res) => {
 });
 
 server.listen(Number(SERVER_PORT), '0.0.0.0', async () => {  // Listen on all network interfaces
-  console.log(`Server is running on port:${SERVER_PORT}`);
+  const protocol = process.env.NODE_ENV === "production" ? "HTTPS" : "HTTP";
+  console.log(`Server is running on ${protocol} port:${SERVER_PORT}`);
 
   process.on("uncaughtException", (innerErr: Error) => {
     console.error(`UNCAUGHT EXCEPTION AT SYSTEM LEVEL: ${innerErr.message}`);
