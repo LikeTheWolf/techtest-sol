@@ -1,0 +1,13 @@
+name,email
+Batch User 1,user1@example.com
+Batch User 2,invalid-email-2
+Batch User 3,
+Batch User 4,user4@example.com
+Batch User 5,user5@example.com
+Batch User 6,invalid-email-6
+Batch User 7,user7@example.com
+Batch User 8,
+Batch User 9,user9@example.com
+Batch User 10,user10@example.com
+Batch User 11,invalid-email-11
+Batch User 12,user12@example.com

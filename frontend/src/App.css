@@ -1,38 +1,144 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+.app-shell {
   min-height: 100vh;
+  background:
+    radial-gradient(1200px 500px at -10% -10%, rgba(0, 143, 214, 0.22), transparent 60%),
+    radial-gradient(1000px 500px at 110% 0%, rgba(7, 196, 168, 0.18), transparent 55%),
+    linear-gradient(180deg, #f4f8fb 0%, #e8f0f6 100%);
+}
+
+.app-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(13, 55, 94, 0.12);
+}
+
+.app-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.upload-lab-page {
   display: flex;
   flex-direction: column;
+  gap: 18px;
+}
+
+.upload-lab-header h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+  letter-spacing: 0.01em;
+}
+
+.upload-lab-header p {
+  margin: 0;
+  max-width: 760px;
+  color: #26465d;
+}
+
+.upload-lab-alert {
+  margin: 0;
+}
+
+.upload-lab-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.upload-lab-card {
+  border-radius: 14px;
+  border: 1px solid rgba(13, 55, 94, 0.12);
+  box-shadow: 0 12px 26px rgba(10, 60, 100, 0.08);
+}
+
+.upload-lab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.upload-lab-divider {
+  margin: 14px 0;
+}
+
+.upload-lab-upload-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.upload-lab-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.upload-lab-results {
+  display: grid;
+  gap: 14px;
+}
+
+.upload-run-card {
+  border-radius: 12px;
+  border: 1px solid rgba(13, 55, 94, 0.1);
+}
+
+.upload-run-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.upload-run-header h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
+.upload-run-header code {
+  font-size: 0.8rem;
+  color: #39576c;
+  word-break: break-all;
+}
+
+.upload-run-meta {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  color: #335267;
+  font-size: 0.9rem;
+}
+
+.upload-run-callout {
+  margin-top: 10px;
+}
+
+.upload-run-table-wrap {
+  margin-top: 12px;
+}
+
+.upload-run-table-wrap h5 {
+  margin: 0 0 8px;
+}
+
+.upload-run-table {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .app-content {
+    padding: 16px 12px 24px;
   }
-  to {
-    transform: rotate(360deg);
+
+  .upload-lab-upload-row {
+    grid-template-columns: 1fr;
   }
 }

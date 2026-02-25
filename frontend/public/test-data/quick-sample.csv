@@ -1,0 +1,6 @@
+name,email
+John Doe,john@example.com
+Jane Smith,invalid-email
+No Email,
+Alex Valid,alex.valid@example.com
+Chris Bad,no-at-symbol
