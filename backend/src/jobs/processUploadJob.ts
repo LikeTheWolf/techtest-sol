@@ -33,10 +33,6 @@ function deferred<T = void>(): [Promise<T>, (value: T) => void] {
 export async function processUploadJob(data: UploadJobData): Promise<void> {
   const { uploadId, filePath } = data;
 
-  // file size for progress
-  const { size: fileSizeBytes } = await fs.promises.stat(filePath);
-
-  let bytesRead = 0;
   let lastPct = -1;
 
   let deltaTotal = 0;
@@ -75,17 +71,22 @@ export async function processUploadJob(data: UploadJobData): Promise<void> {
 
   const limit = pLimit(VALIDATION_CONCURRENCY);
 
-  const readStream = fs.createReadStream(filePath);
+  async function updateProgress() {
+    const rawPct =
+      streamEnded && scheduled === 0
+        ? 100
+        : Math.floor((finished / Math.max(scheduled, 1)) * 100);
 
-  readStream.on("data", (chunk) => {
-    bytesRead += chunk.length;
-    const pct = fileSizeBytes === 0 ? 100 : Math.floor((bytesRead / fileSizeBytes) * 100);
-    const bounded = Math.max(0, Math.min(100, pct));
-    if (bounded !== lastPct) {
-      lastPct = bounded;
-      void setProgressPercent(uploadId, bounded);
-    }
-  });
+    const boundedPct = Math.max(0, Math.min(100, rawPct));
+    const nextPct = Math.max(lastPct, boundedPct);
+
+    if (nextPct === lastPct) return;
+
+    lastPct = nextPct;
+    await setProgressPercent(uploadId, nextPct);
+  }
+
+  const readStream = fs.createReadStream(filePath);
 
   const parser = parse({ headers: true, ignoreEmpty: true, trim: true });
 
@@ -102,6 +103,7 @@ export async function processUploadJob(data: UploadJobData): Promise<void> {
     void flushDeltas(false); 
 
     scheduled += 1;
+    void updateProgress();
 
     void limit(async () => {
       logger.info("Validation attempt", { uploadId, name, email });
@@ -151,6 +153,7 @@ export async function processUploadJob(data: UploadJobData): Promise<void> {
     }).finally(() => {
       finished += 1;
       void flushDeltas(false);
+      void updateProgress();
       checkDone();
     });
   });
@@ -164,5 +167,5 @@ export async function processUploadJob(data: UploadJobData): Promise<void> {
   await donePromise;
 
   await flushDeltas(true);
-  await setProgressPercent(uploadId, 100);
+  await updateProgress();
 }

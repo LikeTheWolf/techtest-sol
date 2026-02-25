@@ -225,8 +225,13 @@ const UploadPage: React.FC = () => {
             <Tag minimal large intent={Intent.SUCCESS}>Done: {summary.done}</Tag>
             <Tag minimal large intent={Intent.DANGER}>Errored: {summary.failed}</Tag>
           </div>
-          <Button minimal onClick={clearCompleted} disabled={uploads.length === 0}>
-            Clear completed
+          <Button
+            intent={Intent.DANGER}
+            icon="trash"
+            onClick={clearCompleted}
+            disabled={uploads.length === 0}
+          >
+            Clear completed runs
           </Button>
         </Card>
       </section>
@@ -298,7 +303,7 @@ const UploadPage: React.FC = () => {
                       </tbody>
                     </HTMLTable>
                     {run.status.details.length > 8 && (
-                      <small>Showing first 8 failures for readability.</small>
+                      <small>Showing latest 8 failures for readability.</small>
                     )}
                   </div>
                 )}

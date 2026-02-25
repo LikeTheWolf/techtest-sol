@@ -1,0 +1,11 @@
+services:
+  upload-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4004:4004"
+    volumes:
+      - /home/sav2748/ssl:/app/ssl:ro
+    command: ["npx", "http-server", "./build", "-p", "4004", "--ssl", "--cert", "/app/ssl/cloudflare-origin.pem", "--key", "/app/ssl/cloudflare-origin.key"]
+    restart: unless-stopped
